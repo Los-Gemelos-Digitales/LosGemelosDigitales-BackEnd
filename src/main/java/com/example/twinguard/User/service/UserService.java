@@ -1,10 +1,16 @@
 package com.example.twinguard.User.service;
 
+import com.example.twinguard.User.dto.UserDTO;
+import com.example.twinguard.User.entity.Admin;
+import com.example.twinguard.User.entity.Teacher;
+import com.example.twinguard.User.repository.AdminRepository;
+import com.example.twinguard.User.repository.TeacherRepository;
 import org.springframework.stereotype.Service;
 import com.example.twinguard.User.entity.User;
 import com.example.twinguard.User.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,49 +18,74 @@ import java.util.Optional;
 public class UserService {
 
     @Autowired
-    private UserRepository userRepository;
+    private TeacherRepository teacherRepository;
 
-    // Obtener todos los usuarios
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    @Autowired
+    private AdminRepository adminRepository;
+
+    // Crear un usuario basado en su rol
+    public User createUserFromDTO(UserDTO userDTO) {
+        if ("Teacher".equalsIgnoreCase(userDTO.getRole())) {
+            Teacher teacher = new Teacher();
+            populateCommonFields(userDTO, teacher);
+            teacher.setAddress(userDTO.getAddress());
+            teacher.setPhone(userDTO.getPhone());
+            return teacherRepository.save(teacher);
+        } else if ("Admin".equalsIgnoreCase(userDTO.getRole())) {
+            Admin admin = new Admin();
+            populateCommonFields(userDTO, admin);
+            admin.setAddress(userDTO.getAddress());
+            admin.setPhone(userDTO.getPhone());
+            return adminRepository.save(admin);
+        }
+        throw new IllegalArgumentException("Invalid role provided");
     }
 
     // Obtener un usuario por su ID
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    // Crear un nuevo usuario
-    public User createUser(User user) {
-        return userRepository.save(user);
-    }
-
-    // Actualizar un usuario existente
-    public User updateUser(Long id, User userDetails) {
-        Optional<User> userOptional = userRepository.findById(id);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            user.setEmail(userDetails.getEmail());
-            user.setUsername(userDetails.getUsername());
-            user.setPassword(userDetails.getPassword());
-            user.setRole(userDetails.getRole());
-            return userRepository.save(user);
+    public Optional<User> getUserById(Long id, String role) {
+        if ("Teacher".equalsIgnoreCase(role)) {
+            // Transformar Optional<Teacher> a Optional<User>
+            return teacherRepository.findById(id).map(teacher -> (User) teacher);
+        } else if ("Admin".equalsIgnoreCase(role)) {
+            // Transformar Optional<Admin> a Optional<User>
+            return adminRepository.findById(id).map(admin -> (User) admin);
         }
-        return null;
+        return Optional.empty();
+    }
+    // Actualizar un usuario existente
+    public User updateUserFromDTO(Long id, String role, UserDTO userDTO) {
+        if ("Teacher".equalsIgnoreCase(role)) {
+            Optional<Teacher> optionalTeacher = teacherRepository.findById(id);
+            if (optionalTeacher.isPresent()) {
+                Teacher teacher = optionalTeacher.get();
+                populateCommonFields(userDTO, teacher);
+                teacher.setAddress(userDTO.getAddress());
+                teacher.setPhone(userDTO.getPhone());
+                return teacherRepository.save(teacher);
+            }
+        } else if ("Admin".equalsIgnoreCase(role)) {
+            Optional<Admin> optionalAdmin = adminRepository.findById(id);
+            if (optionalAdmin.isPresent()) {
+                Admin admin = optionalAdmin.get();
+                populateCommonFields(userDTO, admin);
+                admin.setAddress(userDTO.getAddress());
+                admin.setPhone(userDTO.getPhone());
+                return adminRepository.save(admin);
+            }
+        }
+        throw new IllegalArgumentException("User not found or invalid role");
     }
 
-    // Eliminar un usuario por ID
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+    public List<User> getAllUsers() {
+        List<User> allUsers = new ArrayList<>();
+        allUsers.addAll(teacherRepository.findAll());
+        allUsers.addAll(adminRepository.findAll());
+        return allUsers;
     }
-
-    // Verificar si existe un usuario por nombre de usuario
-    public Optional<User> findUserByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
-
-    // Verificar si existe un usuario por correo electrónico
-    public Optional<User> findUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+    private void populateCommonFields(UserDTO userDTO, User user) {
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        user.setRole(userDTO.getRole());
     }
 }
