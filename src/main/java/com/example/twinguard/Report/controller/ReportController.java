@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping(path = "api/v1/reports")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "https://gorgeous-rugelach-27fa00.netlify.app")
 public class ReportController {
 
     @Autowired

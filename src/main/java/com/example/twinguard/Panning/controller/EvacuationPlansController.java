@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/evacuation-plans")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "https://gorgeous-rugelach-27fa00.netlify.app")
 public class EvacuationPlansController {
 
     @Autowired
